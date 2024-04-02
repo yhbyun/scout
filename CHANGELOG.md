@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.8.4...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.8.5...10.x)
+
+## [v10.8.5](https://github.com/laravel/scout/compare/v10.8.4...v10.8.5) - 2024-04-02
+
+* [Typesense] Issue when searching with queryCallback by [@karakhanyans](https://github.com/karakhanyans) in https://github.com/laravel/scout/pull/817
 
 ## [v10.8.4](https://github.com/laravel/scout/compare/v10.8.3...v10.8.4) - 2024-03-26
 
