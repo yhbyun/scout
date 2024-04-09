@@ -11,8 +11,6 @@ use Laravel\Scout\Builder;
 use stdClass;
 use Typesense\Client as Typesense;
 use Typesense\Collection as TypesenseCollection;
-use Typesense\Document;
-use Typesense\Exceptions\ObjectNotFound;
 use Typesense\Exceptions\TypesenseClientError;
 
 class TypesenseEngine extends Engine
@@ -66,7 +64,7 @@ class TypesenseEngine extends Engine
 
         $objects = $models->map(function ($model) {
             if (empty($searchableData = $model->toSearchableArray())) {
-                return;
+                return null;
             }
 
             return array_merge(
@@ -86,7 +84,7 @@ class TypesenseEngine extends Engine
     /**
      * Import the given documents into the index.
      *
-     * @param  \TypesenseCollection  $collectionIndex
+     * @param  TypesenseCollection  $collectionIndex
      * @param  array  $documents
      * @param  string  $action
      * @return \Illuminate\Support\Collection
@@ -156,7 +154,7 @@ class TypesenseEngine extends Engine
     /**
      * Delete a document from the index.
      *
-     * @param  \TypesenseCollection  $collectionIndex
+     * @param  TypesenseCollection  $collectionIndex
      * @param  mixed  $modelId
      * @return array
      *
@@ -487,7 +485,7 @@ class TypesenseEngine extends Engine
      * Get collection from model or create new one.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $model
-     * @return \TypesenseCollection
+     * @return TypesenseCollection
      *
      * @throws \Typesense\Exceptions\TypesenseClientError
      * @throws \Http\Client\Exception
@@ -496,25 +494,23 @@ class TypesenseEngine extends Engine
     {
         $index = $this->typesense->getCollections()->{$model->searchableAs()};
 
-        try {
-            $index->retrieve();
-
+        if ($index->exists() === true) {
             return $index;
-        } catch (ObjectNotFound $exception) {
-            $schema = config('scout.typesense.model-settings.'.get_class($model).'.collection-schema') ?? [];
-
-            if (method_exists($model, 'typesenseCollectionSchema')) {
-                $schema = $model->typesenseCollectionSchema();
-            }
-
-            if (! isset($schema['name'])) {
-                $schema['name'] = $model->searchableAs();
-            }
-
-            $this->typesense->getCollections()->create($schema);
-
-            return $this->typesense->getCollections()->{$model->searchableAs()};
         }
+
+        $schema = config('scout.typesense.model-settings.'.get_class($model).'.collection-schema') ?? [];
+
+        if (method_exists($model, 'typesenseCollectionSchema')) {
+            $schema = $model->typesenseCollectionSchema();
+        }
+
+        if (! isset($schema['name'])) {
+            $schema['name'] = $model->searchableAs();
+        }
+
+        $this->typesense->getCollections()->create($schema);
+
+        return $this->typesense->getCollections()->{$model->searchableAs()};
     }
 
     /**
