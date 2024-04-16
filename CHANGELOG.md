@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.8.5...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.8.6...10.x)
+
+## [v10.8.6](https://github.com/laravel/scout/compare/v10.8.5...v10.8.6) - 2024-04-16
+
+* Prevent unnecessary api calls on Collection (index) by [@AbdullahFaqeir](https://github.com/AbdullahFaqeir) in https://github.com/laravel/scout/pull/820
 
 ## [v10.8.5](https://github.com/laravel/scout/compare/v10.8.4...v10.8.5) - 2024-04-02
 
