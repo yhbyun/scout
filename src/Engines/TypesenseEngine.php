@@ -261,6 +261,10 @@ class TypesenseEngine extends Engine
             'highlight_affix_num_tokens' => 4,
         ];
 
+        if (method_exists($builder->model, 'typesenseSearchParameters')) {
+            $parameters = array_merge($parameters, $builder->model->typesenseSearchParameters());
+        }
+
         if (! empty($builder->options)) {
             $parameters = array_merge($parameters, $builder->options);
         }
