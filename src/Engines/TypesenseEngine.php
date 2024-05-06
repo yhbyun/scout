@@ -496,10 +496,10 @@ class TypesenseEngine extends Engine
      */
     protected function getOrCreateCollectionFromModel($model): TypesenseCollection
     {
-        $index = $this->typesense->getCollections()->{$model->searchableAs()};
+        $collection = $this->typesense->getCollections()->{$model->searchableAs()};
 
-        if ($index->exists() === true) {
-            return $index;
+        if ($collection->exists() === true) {
+            return $collection;
         }
 
         $schema = config('scout.typesense.model-settings.'.get_class($model).'.collection-schema') ?? [];
@@ -514,7 +514,9 @@ class TypesenseEngine extends Engine
 
         $this->typesense->getCollections()->create($schema);
 
-        return $this->typesense->getCollections()->{$model->searchableAs()};
+        $collection->setExists(true);
+
+        return $collection;
     }
 
     /**
