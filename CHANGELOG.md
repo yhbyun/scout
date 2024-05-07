@@ -1,6 +1,11 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.8.6...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.9.0...10.x)
+
+## [v10.9.0](https://github.com/laravel/scout/compare/v10.8.6...v10.9.0) - 2024-05-07
+
+* Allow Typesense Search Parameter Definition on Models by [@stammbach](https://github.com/stammbach) in https://github.com/laravel/scout/pull/827
+* Fixing issue 825 by [@AbdullahFaqeir](https://github.com/AbdullahFaqeir) in https://github.com/laravel/scout/pull/826
 
 ## [v10.8.6](https://github.com/laravel/scout/compare/v10.8.5...v10.8.6) - 2024-04-16
 
