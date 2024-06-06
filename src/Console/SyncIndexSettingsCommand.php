@@ -84,7 +84,7 @@ class SyncIndexSettingsCommand extends Command
     protected function indexName($name)
     {
         if (class_exists($name)) {
-            return (new $name)->searchableAs();
+            return (new $name)->indexableAs();
         }
 
         $prefix = config('scout.prefix');

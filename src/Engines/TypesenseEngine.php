@@ -225,7 +225,7 @@ class TypesenseEngine extends Engine
      */
     protected function performSearch(Builder $builder, array $options = []): mixed
     {
-        $documents = $this->getOrCreateCollectionFromModel($builder->model)->getDocuments();
+        $documents = $this->getOrCreateCollectionFromModel($builder->model, false)->getDocuments();
 
         if ($builder->callback) {
             return call_user_func($builder->callback, $documents, $builder->query, $options);
@@ -494,9 +494,11 @@ class TypesenseEngine extends Engine
      * @throws \Typesense\Exceptions\TypesenseClientError
      * @throws \Http\Client\Exception
      */
-    protected function getOrCreateCollectionFromModel($model): TypesenseCollection
+    protected function getOrCreateCollectionFromModel($model, bool $indexOperation = true): TypesenseCollection
     {
-        $collection = $this->typesense->getCollections()->{$model->searchableAs()};
+        $method = $indexOperation ? 'indexableAs' : 'searchableAs';
+
+        $collection = $this->typesense->getCollections()->{$model->{$method}()};
 
         if ($collection->exists() === true) {
             return $collection;

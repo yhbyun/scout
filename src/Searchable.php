@@ -300,13 +300,23 @@ trait Searchable
     }
 
     /**
-     * Get the index name for the model.
+     * Get the index name for the model when searching.
      *
      * @return string
      */
     public function searchableAs()
     {
         return config('scout.prefix').$this->getTable();
+    }
+
+    /**
+     * Get the index name for the model when indexing.
+     *
+     * @return string
+     */
+    public function indexableAs()
+    {
+        return $this->searchableAs();
     }
 
     /**

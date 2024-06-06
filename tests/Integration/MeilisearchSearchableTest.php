@@ -2,8 +2,15 @@
 
 namespace Laravel\Scout\Tests\Integration;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Env;
+use Laravel\Scout\Builder;
+use Laravel\Scout\Engines\MeilisearchEngine;
 use Laravel\Scout\Tests\Fixtures\User;
+use Laravel\Scout\Tests\Fixtures\VersionableModel;
+use Meilisearch\Client;
+use Meilisearch\Endpoints\Indexes;
+use Mockery as m;
 
 /**
  * @group meilisearch
@@ -145,6 +152,24 @@ class MeilisearchSearchableTest extends TestCase
             44 => 'Amos Larson Sr.',
             20 => 'Prof. Larry Prosacco DVM',
         ], $page2->pluck('name', 'id')->all());
+    }
+
+    public function test_uses_different_indexes()
+    {
+        $client = m::mock(Client::class);
+        $client->shouldReceive('index')->with('table_v2')->andReturn($index = m::mock(Indexes::class));
+        $index->shouldReceive('deleteDocuments')->with([1]);
+
+        $engine = new MeilisearchEngine($client);
+        $engine->delete(Collection::make([new VersionableModel(['id' => 1])]));
+
+        $client = m::mock(Client::class);
+        $client->shouldReceive('index')->with('table')->once()->andReturn($index = m::mock(Indexes::class));
+        $index->shouldReceive('rawSearch')->once()->andReturn([]);
+
+        $engine = new MeilisearchEngine($client);
+        $builder = new Builder(new VersionableModel(), '');
+        $engine->search($builder);
     }
 
     public function test_it_can_use_paginated_search_with_query_callback()

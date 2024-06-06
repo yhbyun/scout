@@ -5,7 +5,7 @@ namespace Laravel\Scout\Tests\Fixtures;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Searchable;
 
-class SearchableModel extends Model
+class VersionableModel extends Model
 {
     use Searchable;
 
@@ -23,6 +23,6 @@ class SearchableModel extends Model
 
     public function indexableAs()
     {
-        return 'table';
+        return 'table_v2';
     }
 }
