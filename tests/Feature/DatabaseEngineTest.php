@@ -2,31 +2,25 @@
 
 namespace Laravel\Scout\Tests\Feature;
 
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
-use Laravel\Scout\ScoutServiceProvider;
 use Laravel\Scout\Tests\Fixtures\SearchableUserDatabaseModel;
+use Orchestra\Testbench\Concerns\WithLaravelMigrations;
+use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\Factories\UserFactory;
 use Orchestra\Testbench\TestCase;
 
 class DatabaseEngineTest extends TestCase
 {
-    use WithFaker;
-
-    protected function getPackageProviders($app)
-    {
-        return [ScoutServiceProvider::class];
-    }
+    use LazilyRefreshDatabase, WithFaker, WithLaravelMigrations, WithWorkbench;
 
     protected function defineEnvironment($app)
     {
         $app->make('config')->set('scout.driver', 'database');
     }
 
-    protected function defineDatabaseMigrations()
+    protected function afterRefreshingDatabase()
     {
-        $this->setUpFaker();
-        $this->loadLaravelMigrations();
-
         UserFactory::new()->create([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
@@ -108,6 +102,30 @@ class DatabaseEngineTest extends TestCase
 
         $models = SearchableUserDatabaseModel::search('laravel')->paginate();
         $this->assertCount(2, $models);
+    }
+
+    public function test_it_can_paginate_using_a_custom_page_name()
+    {
+        $models = SearchableUserDatabaseModel::search('Taylor')->where('email', 'taylor@laravel.com')->paginate();
+        $this->assertStringContainsString('page=1', $models->url(1));
+
+        $models = SearchableUserDatabaseModel::search('Taylor')->where('email', 'taylor@laravel.com')->paginate(pageName: 'foo');
+        $this->assertStringContainsString('foo=1', $models->url(1));
+
+        $models = SearchableUserDatabaseModel::search('Taylor')->where('email', 'taylor@laravel.com')->paginate(pageName: 'bar');
+        $this->assertStringContainsString('bar=1', $models->url(1));
+    }
+
+    public function test_it_can_simple_paginate_using_a_custom_page_name()
+    {
+        $models = SearchableUserDatabaseModel::search('Taylor')->where('email', 'taylor@laravel.com')->simplePaginate();
+        $this->assertStringContainsString('page=1', $models->url(1));
+
+        $models = SearchableUserDatabaseModel::search('Taylor')->where('email', 'taylor@laravel.com')->simplePaginate(pageName: 'foo');
+        $this->assertStringContainsString('foo=1', $models->url(1));
+
+        $models = SearchableUserDatabaseModel::search('Taylor')->where('email', 'taylor@laravel.com')->simplePaginate(pageName: 'bar');
+        $this->assertStringContainsString('bar=1', $models->url(1));
     }
 
     public function test_limit_is_applied()

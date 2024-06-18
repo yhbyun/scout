@@ -60,7 +60,7 @@ trait Searchable
         }
 
         if (! config('scout.queue')) {
-            return $models->first()->searchableUsing()->update($models);
+            return $models->first()->makeSearchableUsing($models)->first()->searchableUsing()->update($models);
         }
 
         dispatch((new Scout::$makeSearchableJob($models))
@@ -149,6 +149,17 @@ trait Searchable
                 $self->qualifyColumn($self->getScoutKeyName())
             )
             ->searchable($chunk);
+    }
+
+    /**
+     * Modify the collection of models being made searchable.
+     *
+     * @param  \Illuminate\Support\Collection  $models
+     * @return \Illuminate\Support\Collection
+     */
+    public function makeSearchableUsing(BaseCollection $models)
+    {
+        return $models;
     }
 
     /**
@@ -242,7 +253,7 @@ trait Searchable
             call_user_func($builder->queryCallback, $query);
         }
 
-        $whereIn = in_array($this->getKeyType(), ['int', 'integer']) ?
+        $whereIn = in_array($this->getScoutKeyType(), ['int', 'integer']) ?
             'whereIntegerInRaw' :
             'whereIn';
 
@@ -289,13 +300,23 @@ trait Searchable
     }
 
     /**
-     * Get the index name for the model.
+     * Get the index name for the model when searching.
      *
      * @return string
      */
     public function searchableAs()
     {
         return config('scout.prefix').$this->getTable();
+    }
+
+    /**
+     * Get the index name for the model when indexing.
+     *
+     * @return string
+     */
+    public function indexableAs()
+    {
+        return $this->searchableAs();
     }
 
     /**
@@ -380,6 +401,16 @@ trait Searchable
     public function getScoutKey()
     {
         return $this->getKey();
+    }
+
+    /**
+     * Get the auto-incrementing key type for querying models.
+     *
+     * @return string
+     */
+    public function getScoutKeyType()
+    {
+        return $this->getKeyType();
     }
 
     /**

@@ -8,10 +8,10 @@ use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Attributes\SearchUsingFullText;
 use Laravel\Scout\Attributes\SearchUsingPrefix;
 use Laravel\Scout\Builder;
-use Laravel\Scout\Contracts\PaginatesEloquentModels;
+use Laravel\Scout\Contracts\PaginatesEloquentModelsUsingDatabase;
 use ReflectionMethod;
 
-class DatabaseEngine extends Engine implements PaginatesEloquentModels
+class DatabaseEngine extends Engine implements PaginatesEloquentModelsUsingDatabase
 {
     /**
      * Create a new engine instance.
@@ -71,16 +71,30 @@ class DatabaseEngine extends Engine implements PaginatesEloquentModels
      */
     public function paginate(Builder $builder, $perPage, $page)
     {
+        return $this->paginateUsingDatabase($builder, $perPage, 'page', $page);
+    }
+
+    /**
+     * Paginate the given search on the engine.
+     *
+     * @param  \Laravel\Scout\Builder  $builder
+     * @param  int  $perPage
+     * @param  string  $pageName
+     * @param  int  $page
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    public function paginateUsingDatabase(Builder $builder, $perPage, $pageName, $page)
+    {
         return $this->buildSearchQuery($builder)
-                ->when($builder->orders, function ($query) use ($builder) {
-                    foreach ($builder->orders as $order) {
-                        $query->orderBy($order['column'], $order['direction']);
-                    }
-                })
-                ->when(! $this->getFullTextColumns($builder), function ($query) use ($builder) {
-                    $query->orderBy($builder->model->getKeyName(), 'desc');
-                })
-                ->paginate($perPage, ['*'], 'page', $page);
+            ->when($builder->orders, function ($query) use ($builder) {
+                foreach ($builder->orders as $order) {
+                    $query->orderBy($order['column'], $order['direction']);
+                }
+            })
+            ->when(! $this->getFullTextColumns($builder), function ($query) use ($builder) {
+                $query->orderBy($builder->model->getKeyName(), 'desc');
+            })
+            ->paginate($perPage, ['*'], $pageName, $page);
     }
 
     /**
@@ -93,16 +107,29 @@ class DatabaseEngine extends Engine implements PaginatesEloquentModels
      */
     public function simplePaginate(Builder $builder, $perPage, $page)
     {
+        return $this->simplePaginateUsingDatabase($builder, $perPage, 'page', $page);
+    }
+
+    /**
+     * Paginate the given query into a simple paginator.
+     *
+     * @param  int  $perPage
+     * @param  string  $pageName
+     * @param  int|null  $page
+     * @return \Illuminate\Contracts\Pagination\Paginator
+     */
+    public function simplePaginateUsingDatabase(Builder $builder, $perPage, $pageName, $page)
+    {
         return $this->buildSearchQuery($builder)
-                ->when($builder->orders, function ($query) use ($builder) {
-                    foreach ($builder->orders as $order) {
-                        $query->orderBy($order['column'], $order['direction']);
-                    }
-                })
-                ->when(! $this->getFullTextColumns($builder), function ($query) use ($builder) {
-                    $query->orderBy($builder->model->getKeyName(), 'desc');
-                })
-                ->simplePaginate($perPage, ['*'], 'page', $page);
+            ->when($builder->orders, function ($query) use ($builder) {
+                foreach ($builder->orders as $order) {
+                    $query->orderBy($order['column'], $order['direction']);
+                }
+            })
+            ->when(! $this->getFullTextColumns($builder), function ($query) use ($builder) {
+                $query->orderBy($builder->model->getKeyName(), 'desc');
+            })
+            ->simplePaginate($perPage, ['*'], $pageName, $page);
     }
 
     /**
@@ -162,10 +189,10 @@ class DatabaseEngine extends Engine implements PaginatesEloquentModels
     protected function initializeSearchQuery(Builder $builder, array $columns, array $prefixColumns = [], array $fullTextColumns = [])
     {
         if (blank($builder->query)) {
-            return $builder->model->query();
+            return $builder->model->newQuery();
         }
 
-        return $builder->model->query()->where(function ($query) use ($builder, $columns, $prefixColumns, $fullTextColumns) {
+        return $builder->model->newQuery()->where(function ($query) use ($builder, $columns, $prefixColumns, $fullTextColumns) {
             $connectionType = $builder->model->getConnection()->getDriverName();
 
             $canSearchPrimaryKey = ctype_digit($builder->query) &&
@@ -221,6 +248,10 @@ class DatabaseEngine extends Engine implements PaginatesEloquentModels
         })->when(! $builder->callback && count($builder->whereIns) > 0, function ($query) use ($builder) {
             foreach ($builder->whereIns as $key => $values) {
                 $query->whereIn($key, $values);
+            }
+        })->when(! $builder->callback && count($builder->whereNotIns) > 0, function ($query) use ($builder) {
+            foreach ($builder->whereNotIns as $key => $values) {
+                $query->whereNotIn($key, $values);
             }
         })->when(! is_null($builder->queryCallback), function ($query) use ($builder) {
             call_user_func($builder->queryCallback, $query);

@@ -5,12 +5,15 @@ namespace Laravel\Scout;
 use Illuminate\Container\Container;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Support\Traits\Macroable;
+use Illuminate\Support\Traits\Tappable;
 use Laravel\Scout\Contracts\PaginatesEloquentModels;
+use Laravel\Scout\Contracts\PaginatesEloquentModelsUsingDatabase;
 
 class Builder
 {
-    use Macroable;
+    use Conditionable, Macroable, Tappable;
 
     /**
      * The model instance.
@@ -62,6 +65,13 @@ class Builder
     public $whereIns = [];
 
     /**
+     * The "where not in" constraints added to the query.
+     *
+     * @var array
+     */
+    public $whereNotIns = [];
+
+    /**
      * The "limit" that should be applied to the search.
      *
      * @var int
@@ -78,7 +88,7 @@ class Builder
     /**
      * Extra options that should be applied to the search.
      *
-     * @var int
+     * @var array
      */
     public $options = [];
 
@@ -144,6 +154,20 @@ class Builder
     }
 
     /**
+     * Add a "where not in" constraint to the search query.
+     *
+     * @param  string  $field
+     * @param  array  $values
+     * @return $this
+     */
+    public function whereNotIn($field, array $values)
+    {
+        $this->whereNotIns[$field] = $values;
+
+        return $this;
+    }
+
+    /**
      * Include soft deleted records in the results.
      *
      * @return $this
@@ -198,6 +222,36 @@ class Builder
     }
 
     /**
+     * Add an "order by" clause for a timestamp to the query.
+     *
+     * @param  string  $column
+     * @return $this
+     */
+    public function latest($column = null)
+    {
+        if (is_null($column)) {
+            $column = $this->model->getCreatedAtColumn() ?? 'created_at';
+        }
+
+        return $this->orderBy($column, 'desc');
+    }
+
+    /**
+     * Add an "order by" clause for a timestamp to the query.
+     *
+     * @param  string  $column
+     * @return $this
+     */
+    public function oldest($column = null)
+    {
+        if (is_null($column)) {
+            $column = $this->model->getCreatedAtColumn() ?? 'created_at';
+        }
+
+        return $this->orderBy($column, 'asc');
+    }
+
+    /**
      * Set extra options for the search query.
      *
      * @param  array  $options
@@ -208,36 +262,6 @@ class Builder
         $this->options = $options;
 
         return $this;
-    }
-
-    /**
-     * Apply the callback's query changes if the given "value" is true.
-     *
-     * @param  mixed  $value
-     * @param  callable  $callback
-     * @param  callable  $default
-     * @return mixed
-     */
-    public function when($value, $callback, $default = null)
-    {
-        if ($value) {
-            return $callback($this, $value) ?: $this;
-        } elseif ($default) {
-            return $default($this, $value) ?: $this;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Pass the query to a given callback.
-     *
-     * @param  \Closure  $callback
-     * @return $this
-     */
-    public function tap($callback)
-    {
-        return $this->when(true, $callback);
     }
 
     /**
@@ -317,6 +341,8 @@ class Builder
 
         if ($engine instanceof PaginatesEloquentModels) {
             return $engine->simplePaginate($this, $perPage, $page)->appends('query', $this->query);
+        } elseif ($engine instanceof PaginatesEloquentModelsUsingDatabase) {
+            return $engine->simplePaginateUsingDatabase($this, $perPage, $pageName, $page)->appends('query', $this->query);
         }
 
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
@@ -354,6 +380,8 @@ class Builder
 
         if ($engine instanceof PaginatesEloquentModels) {
             return $engine->simplePaginate($this, $perPage, $page)->appends('query', $this->query);
+        } elseif ($engine instanceof PaginatesEloquentModelsUsingDatabase) {
+            return $engine->simplePaginateUsingDatabase($this, $perPage, $pageName, $page)->appends('query', $this->query);
         }
 
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
@@ -389,6 +417,8 @@ class Builder
 
         if ($engine instanceof PaginatesEloquentModels) {
             return $engine->paginate($this, $perPage, $page)->appends('query', $this->query);
+        } elseif ($engine instanceof PaginatesEloquentModelsUsingDatabase) {
+            return $engine->paginateUsingDatabase($this, $perPage, $pageName, $page)->appends('query', $this->query);
         }
 
         $page = $page ?: Paginator::resolveCurrentPage($pageName);
@@ -425,6 +455,8 @@ class Builder
 
         if ($engine instanceof PaginatesEloquentModels) {
             return $engine->paginate($this, $perPage, $page)->appends('query', $this->query);
+        } elseif ($engine instanceof PaginatesEloquentModelsUsingDatabase) {
+            return $engine->paginateUsingDatabase($this, $perPage, $pageName, $page)->appends('query', $this->query);
         }
 
         $page = $page ?: Paginator::resolveCurrentPage($pageName);

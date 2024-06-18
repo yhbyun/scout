@@ -100,6 +100,11 @@ class CollectionEngine extends Engine
                                 $query->whereIn($key, $values);
                             }
                         })
+                        ->when(! $builder->callback && count($builder->whereNotIns) > 0, function ($query) use ($builder) {
+                            foreach ($builder->whereNotIns as $key => $values) {
+                                $query->whereNotIn($key, $values);
+                            }
+                        })
                         ->when($builder->orders, function ($query) use ($builder) {
                             foreach ($builder->orders as $order) {
                                 $query->orderBy($order['column'], $order['direction']);
@@ -116,7 +121,7 @@ class CollectionEngine extends Engine
             return $models;
         }
 
-        return $models->filter(function ($model) use ($builder) {
+        return $models->first()->makeSearchableUsing($models)->filter(function ($model) use ($builder) {
             if (! $model->shouldBeSearchable()) {
                 return false;
             }

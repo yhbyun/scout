@@ -54,7 +54,7 @@ class MeilisearchEngine extends Engine
             return;
         }
 
-        $index = $this->meilisearch->index($models->first()->searchableAs());
+        $index = $this->meilisearch->index($models->first()->indexableAs());
 
         if ($this->usesSoftDelete($models->first()) && $this->softDelete) {
             $models->each->pushSoftDeleteMetadata();
@@ -89,7 +89,7 @@ class MeilisearchEngine extends Engine
             return;
         }
 
-        $index = $this->meilisearch->index($models->first()->searchableAs());
+        $index = $this->meilisearch->index($models->first()->indexableAs());
 
         $keys = $models instanceof RemoveableScoutCollection
             ? $models->pluck($models->first()->getScoutKeyName())
@@ -142,6 +142,15 @@ class MeilisearchEngine extends Engine
     {
         $meilisearch = $this->meilisearch->index($builder->index ?: $builder->model->searchableAs());
 
+        $searchParams = array_merge($builder->options, $searchParams);
+
+        if (array_key_exists('attributesToRetrieve', $searchParams)) {
+            $searchParams['attributesToRetrieve'] = array_merge(
+                [$builder->model->getScoutKeyName()],
+                $searchParams['attributesToRetrieve'],
+            );
+        }
+
         if ($builder->callback) {
             $result = call_user_func(
                 $builder->callback,
@@ -178,20 +187,29 @@ class MeilisearchEngine extends Engine
             }
 
             return is_numeric($value)
-                            ? sprintf('%s=%s', $key, $value)
-                            : sprintf('%s="%s"', $key, $value);
+                ? sprintf('%s=%s', $key, $value)
+                : sprintf('%s="%s"', $key, $value);
         });
 
-        foreach ($builder->whereIns as $key => $values) {
-            $filters->push(sprintf('(%s)', collect($values)->map(function ($value) use ($key) {
-                if (is_bool($value)) {
-                    return sprintf('%s=%s', $key, $value ? 'true' : 'false');
-                }
+        $whereInOperators = [
+            'whereIns' => 'IN',
+            'whereNotIns' => 'NOT IN',
+        ];
 
-                return filter_var($value, FILTER_VALIDATE_INT) !== false
-                                ? sprintf('%s=%s', $key, $value)
-                                : sprintf('%s="%s"', $key, $value);
-            })->values()->implode(' OR ')));
+        foreach ($whereInOperators as $property => $operator) {
+            if (property_exists($builder, $property)) {
+                foreach ($builder->{$property} as $key => $values) {
+                    $filters->push(sprintf('%s %s [%s]', $key, $operator, collect($values)->map(function ($value) {
+                        if (is_bool($value)) {
+                            return sprintf('%s', $value ? 'true' : 'false');
+                        }
+
+                        return filter_var($value, FILTER_VALIDATE_INT) !== false
+                            ? sprintf('%s', $value)
+                            : sprintf('"%s"', $value);
+                    })->values()->implode(', ')));
+                }
+            }
         }
 
         return $filters->values()->implode(' AND ');
@@ -253,7 +271,7 @@ class MeilisearchEngine extends Engine
      */
     public function keys(Builder $builder)
     {
-        $scoutKey = $builder->model->getUnqualifiedScoutKeyName();
+        $scoutKey = $builder->model->getScoutKeyName();
 
         return $this->mapIdsFrom($this->search($builder), $scoutKey);
     }
@@ -280,6 +298,16 @@ class MeilisearchEngine extends Engine
             $builder, $objectIds
         )->filter(function ($model) use ($objectIds) {
             return in_array($model->getScoutKey(), $objectIds);
+        })->map(function ($model) use ($results, $objectIdPositions) {
+            $result = $results['hits'][$objectIdPositions[$model->getScoutKey()]] ?? [];
+
+            foreach ($result as $key => $value) {
+                if (substr($key, 0, 1) === '_') {
+                    $model->withScoutMetadata($key, $value);
+                }
+            }
+
+            return $model;
         })->sortBy(function ($model) use ($objectIdPositions) {
             return $objectIdPositions[$model->getScoutKey()];
         })->values();
@@ -306,6 +334,16 @@ class MeilisearchEngine extends Engine
             $builder, $objectIds
         )->cursor()->filter(function ($model) use ($objectIds) {
             return in_array($model->getScoutKey(), $objectIds);
+        })->map(function ($model) use ($results, $objectIdPositions) {
+            $result = $results['hits'][$objectIdPositions[$model->getScoutKey()]] ?? [];
+
+            foreach ($result as $key => $value) {
+                if (substr($key, 0, 1) === '_') {
+                    $model->withScoutMetadata($key, $value);
+                }
+            }
+
+            return $model;
         })->sortBy(function ($model) use ($objectIdPositions) {
             return $objectIdPositions[$model->getScoutKey()];
         })->values();
@@ -330,7 +368,7 @@ class MeilisearchEngine extends Engine
      */
     public function flush($model)
     {
-        $index = $this->meilisearch->index($model->searchableAs());
+        $index = $this->meilisearch->index($model->indexableAs());
 
         $index->deleteAllDocuments();
     }

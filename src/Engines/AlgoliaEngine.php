@@ -52,7 +52,7 @@ class AlgoliaEngine extends Engine
             return;
         }
 
-        $index = $this->algolia->initIndex($models->first()->searchableAs());
+        $index = $this->algolia->initIndex($models->first()->indexableAs());
 
         if ($this->usesSoftDelete($models->first()) && $this->softDelete) {
             $models->each->pushSoftDeleteMetadata();
@@ -87,7 +87,7 @@ class AlgoliaEngine extends Engine
             return;
         }
 
-        $index = $this->algolia->initIndex($models->first()->searchableAs());
+        $index = $this->algolia->initIndex($models->first()->indexableAs());
 
         $keys = $models instanceof RemoveableScoutCollection
             ? $models->pluck($models->first()->getScoutKeyName())
@@ -167,6 +167,10 @@ class AlgoliaEngine extends Engine
         })->values();
 
         return $wheres->merge(collect($builder->whereIns)->map(function ($values, $key) {
+            if (empty($values)) {
+                return '0=1';
+            }
+
             return collect($values)->map(function ($value) use ($key) {
                 return $key.'='.$value;
             })->all();
@@ -206,6 +210,16 @@ class AlgoliaEngine extends Engine
             $builder, $objectIds
         )->filter(function ($model) use ($objectIds) {
             return in_array($model->getScoutKey(), $objectIds);
+        })->map(function ($model) use ($results, $objectIdPositions) {
+            $result = $results['hits'][$objectIdPositions[$model->getScoutKey()]] ?? [];
+
+            foreach ($result as $key => $value) {
+                if (substr($key, 0, 1) === '_') {
+                    $model->withScoutMetadata($key, $value);
+                }
+            }
+
+            return $model;
         })->sortBy(function ($model) use ($objectIdPositions) {
             return $objectIdPositions[$model->getScoutKey()];
         })->values();
@@ -232,6 +246,16 @@ class AlgoliaEngine extends Engine
             $builder, $objectIds
         )->cursor()->filter(function ($model) use ($objectIds) {
             return in_array($model->getScoutKey(), $objectIds);
+        })->map(function ($model) use ($results, $objectIdPositions) {
+            $result = $results['hits'][$objectIdPositions[$model->getScoutKey()]] ?? [];
+
+            foreach ($result as $key => $value) {
+                if (substr($key, 0, 1) === '_') {
+                    $model->withScoutMetadata($key, $value);
+                }
+            }
+
+            return $model;
         })->sortBy(function ($model) use ($objectIdPositions) {
             return $objectIdPositions[$model->getScoutKey()];
         })->values();
@@ -256,7 +280,7 @@ class AlgoliaEngine extends Engine
      */
     public function flush($model)
     {
-        $index = $this->algolia->initIndex($model->searchableAs());
+        $index = $this->algolia->initIndex($model->indexableAs());
 
         $index->clearObjects();
     }

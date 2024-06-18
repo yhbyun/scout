@@ -136,23 +136,43 @@ class AlgoliaEngineTest extends TestCase
         $engine->search($builder);
     }
 
+    public function test_search_sends_correct_parameters_to_algolia_for_empty_where_in_search()
+    {
+        $client = m::mock(SearchClient::class);
+        $client->shouldReceive('initIndex')->with('table')->andReturn($index = m::mock(stdClass::class));
+        $index->shouldReceive('search')->with('zonda', [
+            'numericFilters' => ['foo=1', '0=1'],
+        ]);
+
+        $engine = new AlgoliaEngine($client);
+        $builder = new Builder(new SearchableModel, 'zonda');
+        $builder->where('foo', 1)->whereIn('bar', []);
+        $engine->search($builder);
+    }
+
     public function test_map_correctly_maps_results_to_models()
     {
         $client = m::mock(SearchClient::class);
         $engine = new AlgoliaEngine($client);
 
         $model = m::mock(stdClass::class);
+
         $model->shouldReceive('getScoutModelsByIds')->andReturn($models = Collection::make([
-            new SearchableModel(['id' => 1]),
+            new SearchableModel(['id' => 1, 'name' => 'test']),
         ]));
 
         $builder = m::mock(Builder::class);
 
-        $results = $engine->map($builder, ['nbHits' => 1, 'hits' => [
-            ['objectID' => 1, 'id' => 1],
-        ]], $model);
+        $results = $engine->map($builder, [
+            'nbHits' => 1,
+            'hits' => [
+                ['objectID' => 1, 'id' => 1, '_rankingInfo' => ['nbTypos' => 0]],
+            ],
+        ], $model);
 
         $this->assertCount(1, $results);
+        $this->assertEquals(['id' => 1, 'name' => 'test'], $results->first()->toArray());
+        $this->assertEquals(['_rankingInfo' => ['nbTypos' => 0]], $results->first()->scoutMetaData());
     }
 
     public function test_map_method_respects_order()
@@ -196,16 +216,18 @@ class AlgoliaEngineTest extends TestCase
 
         $model = m::mock(stdClass::class);
         $model->shouldReceive('queryScoutModelsByIds->cursor')->andReturn($models = LazyCollection::make([
-            new SearchableModel(['id' => 1]),
+            new SearchableModel(['id' => 1, 'name' => 'test']),
         ]));
 
         $builder = m::mock(Builder::class);
 
         $results = $engine->lazyMap($builder, ['nbHits' => 1, 'hits' => [
-            ['objectID' => 1, 'id' => 1],
+            ['objectID' => 1, 'id' => 1, '_rankingInfo' => ['nbTypos' => 0]],
         ]], $model);
 
         $this->assertCount(1, $results);
+        $this->assertEquals(['id' => 1, 'name' => 'test'], $results->first()->toArray());
+        $this->assertEquals(['_rankingInfo' => ['nbTypos' => 0]], $results->first()->scoutMetaData());
     }
 
     public function test_lazy_map_method_respects_order()
