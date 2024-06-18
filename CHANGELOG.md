@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.9.0...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.10.0...10.x)
+
+## [v10.10.0](https://github.com/laravel/scout/compare/v10.9.0...v10.10.0) - 2024-06-18
+
+* Added possibility to version indexes.  by [@Boorinio](https://github.com/Boorinio) in https://github.com/laravel/scout/pull/836
 
 ## [v10.9.0](https://github.com/laravel/scout/compare/v10.8.6...v10.9.0) - 2024-05-07
 
