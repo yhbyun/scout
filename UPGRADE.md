@@ -1,5 +1,11 @@
 # Upgrade Guide
 
+## Upgrading To 11.0 From 10.x
+
+### Algolia Engine `filters`
+
+In previous Scout releases, the Algolia engine utilized `numericFilters` to power `where` conditions. However, `numericFilters` does not support simple string matching. In Scout 11.x, `filters` is now used instead of `numericFilters`.
+
 ## Upgrading To 10.0 From 9.x
 
 ### Minimum Versions
