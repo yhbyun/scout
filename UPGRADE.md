@@ -4,6 +4,8 @@
 
 ### Algolia Engine `filters`
 
+PR: https://github.com/laravel/scout/pull/839
+
 In previous Scout releases, the Algolia engine utilized `numericFilters` to power `where` conditions. However, `numericFilters` does not support simple string matching. In Scout 11.x, `filters` is now used instead of `numericFilters`.
 
 ## Upgrading To 10.0 From 9.x
