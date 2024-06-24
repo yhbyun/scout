@@ -3,6 +3,7 @@
 namespace Laravel\Scout\Engines;
 
 use BackedEnum;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Jobs\RemoveableScoutCollection;
@@ -430,7 +431,9 @@ class MeilisearchEngine extends Engine
         $indexes = $this->meilisearch->getIndexes($query);
 
         foreach ($indexes->getResults() as $index) {
-            $tasks[] = $index->delete();
+            if (str($index->getUid())->startsWith(Config::get('scout.prefix'))) {
+                $tasks[] = $index->delete();
+            }
         }
 
         return $tasks;

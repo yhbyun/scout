@@ -8,6 +8,10 @@ PR: https://github.com/laravel/scout/pull/839
 
 In previous Scout releases, the Algolia engine utilized `numericFilters` to power `where` conditions. However, `numericFilters` does not support simple string matching. In Scout 11.x, `filters` is now used instead of `numericFilters`.
 
+### Meilisearch Engine `scout:delete-all-indexes` Command
+
+In previous releases, the Meilisearch engine’s `scout:delete-all-indexes` command would drop all indexes from the Meilisearch server. In Scout 11.x, the command now only drops indexes with the application's currently configured Scout prefix. Typically, this corresponds to the `SCOUT_PREFIX` environment variable and / or the `scout.prefix` configuration value.
+
 ## Upgrading To 10.0 From 9.x
 
 ### Minimum Versions
