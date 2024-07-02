@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.10.0...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.10.1...10.x)
+
+## [v10.10.1](https://github.com/laravel/scout/compare/v10.10.0...v10.10.1) - 2024-07-02
+
+* [10.x] Get the key name through getScoutKeyName() on the Database engine by [@antonioribeiro](https://github.com/antonioribeiro) in https://github.com/laravel/scout/pull/843
 
 ## [v10.10.0](https://github.com/laravel/scout/compare/v10.9.0...v10.10.0) - 2024-06-18
 
