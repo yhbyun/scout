@@ -508,7 +508,7 @@ class TypesenseEngine extends Engine
 
             try {
                 $this->typesense->collections[$collectionName]->retrieve();
-                
+
                 $collectionExists = true;
             } catch (TypesenseClientError $e) {
                 //
