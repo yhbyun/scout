@@ -500,8 +500,23 @@ class TypesenseEngine extends Engine
 
         $collection = $this->typesense->getCollections()->{$model->{$method}()};
 
-        if ($collection->exists() === true) {
-            return $collection;
+        $collectionExists = false;
+
+        if ($collection->exists()) {
+            // Also determine if the collection exists in Typesense...
+            $collectionName = $model->{$method}();
+
+            try {
+                $this->typesense->collections[$collectionName]->retrieve();
+                
+                $collectionExists = true;
+            } catch (TypesenseClientError $e) {
+                //
+            }
+        }
+
+        if ($collectionExists) {
+            return $this->typesense->getCollections()->{$collectionName};
         }
 
         $schema = config('scout.typesense.model-settings.'.get_class($model).'.collection-schema') ?? [];
