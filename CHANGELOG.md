@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.10.1...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.10.2...10.x)
+
+## [v10.10.2](https://github.com/laravel/scout/compare/v10.10.1...v10.10.2) - 2024-07-23
+
+* [Typesense]  Sync server state in getOrCreateCollectionFromModel #845 by [@tharropoulos](https://github.com/tharropoulos) in https://github.com/laravel/scout/pull/846
 
 ## [v10.10.1](https://github.com/laravel/scout/compare/v10.10.0...v10.10.1) - 2024-07-02
 
