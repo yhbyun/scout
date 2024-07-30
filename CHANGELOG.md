@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.10.2...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.11.0...10.x)
+
+## [v10.11.0](https://github.com/laravel/scout/compare/v10.10.2...v10.11.0) - 2024-07-30
+
+* [10.x] Allow setting custom scout builder class by [@gdebrauwer](https://github.com/gdebrauwer) in https://github.com/laravel/scout/pull/852
 
 ## [v10.10.2](https://github.com/laravel/scout/compare/v10.10.1...v10.10.2) - 2024-07-23
 
