@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.11.0...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.11.1...10.x)
+
+## [v10.11.1](https://github.com/laravel/scout/compare/v10.11.0...v10.11.1) - 2024-08-06
+
+* refactor(typesense): remove unused exists checks by [@saibotk](https://github.com/saibotk) in https://github.com/laravel/scout/pull/847
 
 ## [v10.11.0](https://github.com/laravel/scout/compare/v10.10.2...v10.11.0) - 2024-07-30
 
