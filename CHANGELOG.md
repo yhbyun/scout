@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.11.1...10.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.11.2...10.x)
+
+## [v10.11.2](https://github.com/laravel/scout/compare/v10.11.1...v10.11.2) - 2024-09-03
+
+* [10.x] Add Generic Docblocks To Builder by [@Magnesium38](https://github.com/Magnesium38) in https://github.com/laravel/scout/pull/857
 
 ## [v10.11.1](https://github.com/laravel/scout/compare/v10.11.0...v10.11.1) - 2024-08-06
 
