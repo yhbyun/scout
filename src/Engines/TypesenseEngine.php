@@ -498,10 +498,19 @@ class TypesenseEngine extends Engine
     {
         $method = $indexOperation ? 'indexableAs' : 'searchableAs';
 
-        $collection = $this->typesense->getCollections()->{$model->{$method}()};
+        $collectionName = $model->{$method}();
+        $collection = $this->typesense->getCollections()->{$collectionName};
 
-        if ($collection->exists() === true) {
+        // Determine if the collection exists in Typesense...
+        try {
+            $collection->retrieve();
+
+            // No error means this collection exists on the server...
+            $collection->setExists(true);
+
             return $collection;
+        } catch (TypesenseClientError $e) {
+            //
         }
 
         $schema = config('scout.typesense.model-settings.'.get_class($model).'.collection-schema') ?? [];

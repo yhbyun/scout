@@ -1,6 +1,30 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/scout/compare/v10.9.0...11.x)
+## [Unreleased](https://github.com/laravel/scout/compare/v10.11.2...11.x)
+
+## [v10.11.2](https://github.com/laravel/scout/compare/v10.11.1...v10.11.2) - 2024-09-03
+
+* [10.x] Add Generic Docblocks To Builder by [@Magnesium38](https://github.com/Magnesium38) in https://github.com/laravel/scout/pull/857
+
+## [v10.11.1](https://github.com/laravel/scout/compare/v10.11.0...v10.11.1) - 2024-08-06
+
+* refactor(typesense): remove unused exists checks by [@saibotk](https://github.com/saibotk) in https://github.com/laravel/scout/pull/847
+
+## [v10.11.0](https://github.com/laravel/scout/compare/v10.10.2...v10.11.0) - 2024-07-30
+
+* [10.x] Allow setting custom scout builder class by [@gdebrauwer](https://github.com/gdebrauwer) in https://github.com/laravel/scout/pull/852
+
+## [v10.10.2](https://github.com/laravel/scout/compare/v10.10.1...v10.10.2) - 2024-07-23
+
+* [Typesense]  Sync server state in getOrCreateCollectionFromModel #845 by [@tharropoulos](https://github.com/tharropoulos) in https://github.com/laravel/scout/pull/846
+
+## [v10.10.1](https://github.com/laravel/scout/compare/v10.10.0...v10.10.1) - 2024-07-02
+
+* [10.x] Get the key name through getScoutKeyName() on the Database engine by [@antonioribeiro](https://github.com/antonioribeiro) in https://github.com/laravel/scout/pull/843
+
+## [v10.10.0](https://github.com/laravel/scout/compare/v10.9.0...v10.10.0) - 2024-06-18
+
+* Added possibility to version indexes.  by [@Boorinio](https://github.com/Boorinio) in https://github.com/laravel/scout/pull/836
 
 ## [v10.9.0](https://github.com/laravel/scout/compare/v10.8.6...v10.9.0) - 2024-05-07
 
