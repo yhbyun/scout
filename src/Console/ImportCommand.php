@@ -5,9 +5,8 @@ namespace Laravel\Scout\Console;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Events\Dispatcher;
 use Laravel\Scout\Events\ModelsImported;
-use Symfony\Component\Console\Attribute\AsCommand;
 
-#[AsCommand(name: 'scout:import')]
+
 class ImportCommand extends Command
 {
     /**

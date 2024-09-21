@@ -3,9 +3,7 @@
 namespace Laravel\Scout\Console;
 
 use Illuminate\Console\Command;
-use Symfony\Component\Console\Attribute\AsCommand;
 
-#[AsCommand(name: 'scout:flush')]
 class FlushCommand extends Command
 {
     /**

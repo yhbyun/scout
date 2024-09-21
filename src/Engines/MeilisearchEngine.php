@@ -2,7 +2,6 @@
 
 namespace Laravel\Scout\Engines;
 
-use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Jobs\RemoveableScoutCollection;
 use Meilisearch\Client as MeilisearchClient;
@@ -56,7 +55,7 @@ class MeilisearchEngine extends Engine
         $index = $this->meilisearch->index($models->first()->indexableAs());
 
         if ($this->usesSoftDelete($models->first()) && $this->softDelete) {
-            $models->each->pushSoftDeleteMetadata();
+            $models->each(fn ($model) => $model->pushSoftDeleteMetadata());
         }
 
         $objects = $models->map(function ($model) {
@@ -92,7 +91,7 @@ class MeilisearchEngine extends Engine
 
         $keys = $models instanceof RemoveableScoutCollection
             ? $models->pluck($models->first()->getScoutKeyName())
-            : $models->map->getScoutKey();
+            : $models->map(fn ($model) => $model->getScoutKey());
 
         $index->deleteDocuments($keys->values()->all());
     }
@@ -308,41 +307,7 @@ class MeilisearchEngine extends Engine
         })->values();
     }
 
-    /**
-     * Map the given results to instances of the given model via a lazy collection.
-     *
-     * @param  \Laravel\Scout\Builder  $builder
-     * @param  mixed  $results
-     * @param  \Illuminate\Database\Eloquent\Model  $model
-     * @return \Illuminate\Support\LazyCollection
-     */
-    public function lazyMap(Builder $builder, $results, $model)
-    {
-        if (count($results['hits']) === 0) {
-            return LazyCollection::make($model->newCollection());
-        }
-
-        $objectIds = collect($results['hits'])->pluck($model->getScoutKeyName())->values()->all();
-        $objectIdPositions = array_flip($objectIds);
-
-        return $model->queryScoutModelsByIds(
-            $builder, $objectIds
-        )->cursor()->filter(function ($model) use ($objectIds) {
-            return in_array($model->getScoutKey(), $objectIds);
-        })->map(function ($model) use ($results, $objectIdPositions) {
-            $result = $results['hits'][$objectIdPositions[$model->getScoutKey()]] ?? [];
-
-            foreach ($result as $key => $value) {
-                if (substr($key, 0, 1) === '_') {
-                    $model->withScoutMetadata($key, $value);
-                }
-            }
-
-            return $model;
-        })->sortBy(function ($model) use ($objectIdPositions) {
-            return $objectIdPositions[$model->getScoutKey()];
-        })->values();
-    }
+    // TODO: add lazyMap method
 
     /**
      * Get the total count from a raw result returned by the engine.
@@ -439,7 +404,9 @@ class MeilisearchEngine extends Engine
      */
     protected function usesSoftDelete($model)
     {
-        return in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($model));
+        $class = is_object($model) ? get_class($model) : $model;
+
+        return in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($class));
     }
 
     /**

@@ -5,9 +5,7 @@ namespace Laravel\Scout\Console;
 use Exception;
 use Illuminate\Console\Command;
 use Laravel\Scout\EngineManager;
-use Symfony\Component\Console\Attribute\AsCommand;
 
-#[AsCommand(name: 'scout:delete-all-indexes')]
 class DeleteAllIndexesCommand extends Command
 {
     /**

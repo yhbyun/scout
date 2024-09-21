@@ -8,6 +8,8 @@ use Illuminate\Support\Collection as BaseCollection;
 
 trait Searchable
 {
+    use ModelBugFixer;
+
     /**
      * Additional metadata attributes managed by Scout.
      *
@@ -139,15 +141,15 @@ trait Searchable
         $softDelete = static::usesSoftDelete() && config('scout.soft_delete', false);
 
         $self->newQuery()
-            ->when(true, function ($query) use ($self) {
+            ->where(function ($query) use ($self) {
                 $self->makeAllSearchableUsing($query);
             })
-            ->when($softDelete, function ($query) {
-                $query->withTrashed();
+            ->where(function ($query) use ($softDelete) {
+                if ($softDelete) {
+                    $query->withTrashed();
+                }
             })
-            ->orderBy(
-                $self->qualifyColumn($self->getScoutKeyName())
-            )
+            ->orderBy($self->getKeyName())
             ->searchable($chunk);
     }
 
@@ -253,9 +255,11 @@ trait Searchable
             call_user_func($builder->queryCallback, $query);
         }
 
-        $whereIn = in_array($this->getScoutKeyType(), ['int', 'integer']) ?
-            'whereIntegerInRaw' :
-            'whereIn';
+        // TODO:
+        // $whereIn = in_array($this->getScoutKeyType(), ['int', 'integer']) ?
+        //     'whereIntegerInRaw' :
+        //     'whereIn';
+        $whereIn = 'whereIn';
 
         return $query->{$whereIn}(
             $this->qualifyColumn($this->getScoutKeyName()), $ids
@@ -410,7 +414,9 @@ trait Searchable
      */
     public function getScoutKeyType()
     {
-        return $this->getKeyType();
+        // TODO: remove hard coding
+        // return $this->getKeyType();
+        return 'int';
     }
 
     /**

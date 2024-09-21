@@ -187,6 +187,6 @@ class ModelObserver
      */
     protected function usesSoftDelete($model)
     {
-        return in_array(SoftDeletes::class, class_uses_recursive($model));
+        return in_array(SoftDeletes::class, class_uses_recursive(get_class($model)));
     }
 }

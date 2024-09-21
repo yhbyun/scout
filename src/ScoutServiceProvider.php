@@ -29,7 +29,9 @@ class ScoutServiceProvider extends ServiceProvider
                 return new Meilisearch(
                     $config['host'],
                     $config['key'],
-                    clientAgents: [sprintf('Meilisearch Laravel Scout (v%s)', Scout::VERSION)],
+                    null,
+                    null,
+                    [sprintf('Meilisearch Laravel Scout (v%s)', Scout::VERSION)]
                 );
             });
         }

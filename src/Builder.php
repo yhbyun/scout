@@ -5,9 +5,7 @@ namespace Laravel\Scout;
 use Illuminate\Container\Container;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Support\Traits\Macroable;
-use Illuminate\Support\Traits\Tappable;
 use Laravel\Scout\Contracts\PaginatesEloquentModels;
 use Laravel\Scout\Contracts\PaginatesEloquentModelsUsingDatabase;
 
@@ -16,7 +14,7 @@ use Laravel\Scout\Contracts\PaginatesEloquentModelsUsingDatabase;
  */
 class Builder
 {
-    use Conditionable, Macroable, Tappable;
+    use Macroable;
 
     /**
      * The model instance.
@@ -321,16 +319,6 @@ class Builder
     }
 
     /**
-     * Get the results of the search as a "lazy collection" instance.
-     *
-     * @return \Illuminate\Support\LazyCollection<int, TModel>
-     */
-    public function cursor()
-    {
-        return $this->engine()->cursor($this);
-    }
-
-    /**
      * Paginate the given query into a simple paginator.
      *
      * @param  int  $perPage
@@ -356,7 +344,7 @@ class Builder
             $this, $rawResults = $engine->paginate($this, $perPage, $page), $this->model
         )->all());
 
-        $paginator = Container::getInstance()->makeWith(Paginator::class, [
+        $paginator = Container::getInstance()->make(Paginator::class, [
             'items' => $results,
             'perPage' => $perPage,
             'currentPage' => $page,
@@ -393,7 +381,7 @@ class Builder
 
         $results = $engine->paginate($this, $perPage, $page);
 
-        $paginator = Container::getInstance()->makeWith(Paginator::class, [
+        $paginator = Container::getInstance()->make(Paginator::class, [
             'items' => $results,
             'perPage' => $perPage,
             'currentPage' => $page,
@@ -432,7 +420,7 @@ class Builder
             $this, $rawResults = $engine->paginate($this, $perPage, $page), $this->model
         )->all());
 
-        return Container::getInstance()->makeWith(LengthAwarePaginator::class, [
+        return Container::getInstance()->make(LengthAwarePaginator::class, [
             'items' => $results,
             'total' => $this->getTotalCount($rawResults),
             'perPage' => $perPage,
@@ -468,7 +456,7 @@ class Builder
 
         $results = $engine->paginate($this, $perPage, $page);
 
-        return Container::getInstance()->makeWith(LengthAwarePaginator::class, [
+        return Container::getInstance()->make(LengthAwarePaginator::class, [
             'items' => $results,
             'total' => $this->getTotalCount($results),
             'perPage' => $perPage,

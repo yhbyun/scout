@@ -14,15 +14,13 @@
         }
     ],
     "require": {
-        "php": "^8.0",
-        "illuminate/bus": "^9.0|^10.0|^11.0",
-        "illuminate/contracts": "^9.0|^10.0|^11.0",
-        "illuminate/database": "^9.0|^10.0|^11.0",
-        "illuminate/http": "^9.0|^10.0|^11.0",
-        "illuminate/pagination": "^9.0|^10.0|^11.0",
-        "illuminate/queue": "^9.0|^10.0|^11.0",
-        "illuminate/support": "^9.0|^10.0|^11.0",
-        "symfony/console": "^6.0|^7.0"
+        "php": ">=5.6.4",
+        "illuminate/bus": "~5.1",
+        "illuminate/contracts": "~5.1",
+        "illuminate/database": "~5.1",
+        "illuminate/pagination": "~5.1",
+        "illuminate/queue": "~5.1",
+        "illuminate/support": "~5.1"
     },
     "require-dev": {
         "algolia/algoliasearch-client-php": "^3.2",
