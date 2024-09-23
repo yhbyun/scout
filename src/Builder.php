@@ -73,6 +73,13 @@ class Builder
     public $whereNotIns = [];
 
     /**
+     * The "contains" constraints added to the query.
+     *
+     * @var array
+     */
+    public $whereContains = [];
+
+    /**
      * The "limit" that should be applied to the search.
      *
      * @var int
@@ -164,6 +171,20 @@ class Builder
     public function whereNotIn($field, array $values)
     {
         $this->whereNotIns[$field] = $values;
+
+        return $this;
+    }
+
+    /**
+     * Add a "contains" constraint to the search query.
+     *
+     * @param  string  $field
+     * @param  mixed  $value
+     * @return $this
+     */
+    public function whereContains($field, $value)
+    {
+        $this->whereContains[$field] = $value;
 
         return $this;
     }

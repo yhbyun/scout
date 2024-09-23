@@ -185,6 +185,10 @@ class MeilisearchEngine extends Engine
                 : sprintf('%s="%s"', $key, $value);
         });
 
+        $filters = collect($builder->whereContains)->map(function ($value, $key) {
+            return sprintf('%s CONTAINS %s', $key, $value);
+        });
+
         $whereInOperators = [
             'whereIns' => 'IN',
             'whereNotIns' => 'NOT IN',
