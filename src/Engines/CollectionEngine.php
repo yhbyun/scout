@@ -105,6 +105,11 @@ class CollectionEngine extends Engine
                                 $query->whereNotIn($key, $values);
                             }
                         })
+                        ->when(! $builder->callback && count($builder->whereComparisons) > 0, function ($query) use ($builder) {
+                            foreach ($builder->whereComparisons as $comparison) {
+                                $query->where($comparison['field'], $comparison['operator'], $comparison['value']);
+                            }
+                        })
                         ->when($builder->orders, function ($query) use ($builder) {
                             foreach ($builder->orders as $order) {
                                 $query->orderBy($order['column'], $order['direction']);

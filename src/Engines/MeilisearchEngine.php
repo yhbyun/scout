@@ -2,6 +2,7 @@
 
 namespace Laravel\Scout\Engines;
 
+use InvalidArgumentException;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Jobs\RemoveableScoutCollection;
 use Meilisearch\Client as MeilisearchClient;
@@ -167,50 +168,193 @@ class MeilisearchEngine extends Engine
         return $meilisearch->rawSearch($builder->query, $searchParams);
     }
 
+   /**
+     * @param  mixed  $value
+     * @return string
+     */
+    protected function formatFilterValues($value)
+    {
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        return (filter_var($value, FILTER_VALIDATE_INT))
+            ? sprintf('%s', $value)
+            : sprintf('"%s"', $value);
+    }
+
     /**
-     * Get the filter array for the query.
+     * @param $column string
+     * @param $value mixed
+     * @param $operator null|string
+     * @return string
+     */
+    protected function parseFilterExpressions($column, $value, $operator = null)
+    {
+
+        if ($operator === 'Exists') {
+            return sprintf('%s EXISTS', $column);
+        }
+
+        if (in_array($operator, ['Null', 'NotNull'])) {
+            return sprintf('%s %s',
+                $column,
+                $operator === 'Null' ? 'IS NULL' : 'IS NOT NULL'
+            );
+        }
+
+        // Note: Meilisearch does not treat null values as empty. To match null fields, use the IS NULL operator.
+        if (in_array($operator, ['IsEmpty', 'IsNotEmpty'])) {
+            return sprintf('%s %s',
+                $column,
+                $operator === 'IsEmpty' ? 'IS EMPTY' : 'IS NOT EMPTY'
+            );
+        }
+
+        if (is_array($value)) {
+
+            // Meilisearch uses "TO" operator as equivalent to >= AND <=
+            if ($operator === 'between') {
+                return sprintf('%s %s TO %s',
+                    $column,
+                    $this->formatFilterValues($value[0]),
+                    $this->formatFilterValues($value[1]),
+                );
+            }
+
+            // Where IN/NOT IN
+            if (in_array($operator, ['In', 'NotIn'])) {
+
+                return sprintf('%s %s [%s]',
+                    $column,
+                    $operator === 'In' ? 'IN' : 'NOT IN',
+                    implode(', ', collect($value)->map(fn ($v) => $this->formatFilterValues($v))->toArray())
+                );
+            }
+        }
+
+        if (empty($operator)) {
+            $operator = '=';
+        }
+
+        return sprintf('%s%s%s', $column, $operator, $this->formatFilterValues($value));
+    }
+
+    /**
+     * Get the filter expression to be used with the query
      *
-     * @param  \Laravel\Scout\Builder  $builder
      * @return string
      */
     protected function filters(Builder $builder)
     {
-        $filters = collect($builder->wheres)->map(function ($value, $key) {
-            if (is_bool($value)) {
-                return sprintf('%s=%s', $key, $value ? 'true' : 'false');
-            }
 
-            return is_numeric($value)
-                ? sprintf('%s=%s', $key, $value)
-                : sprintf('%s="%s"', $key, $value);
-        });
+        // Transition check, original version
+        if (! method_exists($builder, 'isNewSearchEngineAcive') || ! $builder->isNewSearchEngineAcive()) {
 
-        $filters = collect($builder->whereContains)->map(function ($value, $key) {
-            return sprintf('%s CONTAINS %s', $key, $value);
-        });
+            $filters = collect($builder->wheres)->map(function ($value, $key) {
+                if (is_bool($value)) {
+                    return sprintf('%s=%s', $key, $value ? 'true' : 'false');
+                }
 
-        $whereInOperators = [
-            'whereIns' => 'IN',
-            'whereNotIns' => 'NOT IN',
-        ];
+                return is_numeric($value)
+                    ? sprintf('%s=%s', $key, $value)
+                    : sprintf('%s="%s"', $key, $value);
+            });
 
-        foreach ($whereInOperators as $property => $operator) {
-            if (property_exists($builder, $property)) {
-                foreach ($builder->{$property} as $key => $values) {
-                    $filters->push(sprintf('%s %s [%s]', $key, $operator, collect($values)->map(function ($value) {
-                        if (is_bool($value)) {
-                            return sprintf('%s', $value ? 'true' : 'false');
-                        }
+            $whereInOperators = [
+                'whereIns' => 'IN',
+                'whereNotIns' => 'NOT IN',
+            ];
 
-                        return filter_var($value, FILTER_VALIDATE_INT) !== false
-                            ? sprintf('%s', $value)
-                            : sprintf('"%s"', $value);
-                    })->values()->implode(', ')));
+            foreach ($whereInOperators as $property => $operator) {
+                if (property_exists($builder, $property)) {
+                    foreach ($builder->{$property} as $key => $values) {
+                        $filters->push(sprintf('%s %s [%s]', $key, $operator, collect($values)->map(function ($value) {
+                            if (is_bool($value)) {
+                                return sprintf('%s', $value ? 'true' : 'false');
+                            }
+
+                            return filter_var($value, FILTER_VALIDATE_INT) !== false
+                                ? sprintf('%s', $value)
+                                : sprintf('"%s"', $value);
+                        })->values()->implode(', ')));
+                    }
                 }
             }
+
+            return $filters->values()->implode(' AND ');
+
         }
 
-        return $filters->values()->implode(' AND ');
+        // New rewritten version
+        if (! is_array($builder->wheres) || empty($builder->wheres)) {
+            return '';
+        }
+
+        $stack = [];
+
+        foreach ($builder->wheres as $expression) {
+
+            if (! empty($stack)) {
+                $stack[] = strtoupper($expression['boolean']);
+            }
+
+            $type = $expression['type'];
+
+            // Nested "( Expression )"
+            if ($type === 'Nested' && array_key_exists('query', $expression)) {
+
+                // Recursive nested expression
+                $stack[] = '('.$this->filters($expression['query']).')';
+
+            } else {
+
+                // With NotNull/Null expressions we're only need column name
+                $value = $expression['value'] ?? $expression['values'] ?? null;
+                $column = $expression['column'];
+
+                if ($type === 'Basic' && array_key_exists('operator', $expression)) {
+
+                    // Only with a Basic expression is where we need to use an operator
+                    $operator = $expression['operator'];
+                    $stack[] = $this->parseFilterExpressions($column, $value, $operator);
+
+                } else {
+
+                    // I'm using "between" in lowercase to be consistent with \Illuminate\Database\Query\Builder
+                    if ($type === 'between') {
+
+                        $stack[] = $this->parseFilterExpressions($column, $value, $type);
+
+                    } elseif ($type === 'Exists') {
+
+                        $stack[] = $this->parseFilterExpressions($column, $value, $type);
+
+                    } elseif (in_array($type, ['IsEmpty', 'IsNotEmpty'])) {
+
+                        $stack[] = $this->parseFilterExpressions($column, $value, $type);
+
+                    } elseif (in_array($type, ['In', 'NotIn'])) {
+
+                        $stack[] = $this->parseFilterExpressions($column, $value, $type);
+
+                    } elseif (in_array($type, ['Null', 'NotNull'])) {
+
+                        $stack[] = $this->parseFilterExpressions($column, null, $type);
+
+                    } else {
+
+                        throw new InvalidArgumentException("{$type} expression not supported");
+                    }
+
+                }
+
+            }
+
+        }
+
+        return implode(' ', $stack);
+
     }
 
     /**
