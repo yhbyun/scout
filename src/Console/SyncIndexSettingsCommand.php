@@ -58,7 +58,7 @@ class SyncIndexSettingsCommand extends Command
 
                     if (isset($model) &&
                         config('scout.soft_delete', false) &&
-                        in_array(SoftDeletes::class, class_uses_recursive($model))) {
+                        in_array(SoftDeletes::class, class_uses_recursive(get_class($model)))) {
                         $settings['filterableAttributes'][] = '__soft_deleted';
                     }
 
