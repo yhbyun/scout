@@ -136,20 +136,14 @@ trait Searchable
      */
     public static function makeAllSearchable($chunk = null)
     {
-        $self = new static;
-
         $softDelete = static::usesSoftDelete() && config('scout.soft_delete', false);
 
-        $self->newQuery()
-            ->where(function ($query) use ($self) {
-                $self->makeAllSearchableUsing($query);
-            })
-            ->where(function ($query) use ($softDelete) {
-                if ($softDelete) {
-                    $query->withTrashed();
-                }
-            })
-            ->orderBy($self->getKeyName())
+        $query = $softDelete ? static::withTrashed() : (new static)->newQuery();
+        // TODO: call to makeAllSearchableUsing
+        // $query->where(function ($query) use ($self) {
+        //         $self->makeAllSearchableUsing($query);
+        //     })
+        $query->orderBy((new static)->getKeyName())
             ->searchable($chunk);
     }
 

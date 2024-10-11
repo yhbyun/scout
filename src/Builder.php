@@ -144,16 +144,31 @@ class Builder
      * @param  string  $query
      * @param  \Closure|null  $callback
      * @param  bool  $softDelete
+     * @param  bool  $nestedBuilder
+     * @param  bool  $useNewMeilisearchQueryBuilder
      * @return void
      */
-    public function __construct($model, $query, $callback = null, $softDelete = false)
-    {
+    public function __construct(
+        $model,
+        $query,
+        $callback = null,
+        $softDelete = false,
+        $nestedBuilder = false,
+        $useNewMeilisearchQueryBuilder = true
+    ) {
         $this->model = $model;
         $this->query = $query;
         $this->callback = $callback;
+        $this->useNewMeilisearchQueryBuilder = $useNewMeilisearchQueryBuilder;
 
         if ($softDelete) {
-            $this->wheres['__soft_deleted'] = 0;
+            if (! method_exists($this, 'isNewSearchEngineAcive') || ! $this->isNewSearchEngineAcive()) {
+                $this->wheres['__soft_deleted'] = 0;
+            } else {
+                if (! $nestedBuilder) {
+                    $this->where('__soft_deleted', 0);
+                }
+            }
         }
     }
 
@@ -628,14 +643,14 @@ class Builder
      *
      * @return Builder
      */
-    public function newQuery()
+    protected function newQuery()
     {
-
         $query = new self(
             $this->model,
             null,
             null,
-            in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses($this->model))
+            true,
+            $this->usesSoftDelete($this->model) && config('scout.soft_delete', false)
         );
 
         // Inherit actual usage flag
@@ -651,7 +666,15 @@ class Builder
      */
     public function withTrashed()
     {
-        unset($this->wheres['__soft_deleted']);
+        if (! method_exists($this, 'isNewSearchEngineAcive') || ! $this->isNewSearchEngineAcive()) {
+            unset($this->wheres['__soft_deleted']);
+        } else {
+            foreach ($this->wheres as $key => $value) {
+                if (data_get($value, 'column') === '__soft_deleted') {
+                    unset($this->wheres[$key]);
+                }
+            }
+        }
 
         return $this;
     }
@@ -663,8 +686,14 @@ class Builder
      */
     public function onlyTrashed()
     {
+        if (! method_exists($this, 'isNewSearchEngineAcive') || ! $this->isNewSearchEngineAcive()) {
+            return tap($this->withTrashed(), function () {
+                $this->wheres['__soft_deleted'] = 1;
+            });
+        }
+
         return tap($this->withTrashed(), function () {
-            $this->wheres['__soft_deleted'] = 1;
+            $this->where('__soft_deleted', 1);
         });
     }
 
@@ -983,5 +1012,18 @@ class Builder
     protected function engine()
     {
         return $this->model->searchableUsing();
+    }
+
+    /**
+     * Determine if the given model uses soft deletes.
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @return bool
+     */
+    protected function usesSoftDelete($model)
+    {
+        $class = is_object($model) ? get_class($model) : $model;
+
+        return in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses_recursive($class));
     }
 }
