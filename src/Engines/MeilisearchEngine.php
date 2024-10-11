@@ -299,6 +299,7 @@ class MeilisearchEngine extends Engine
                 $stack[] = strtoupper($expression['boolean']);
             }
 
+            // logger('expression ' . json_encode($expression));
             $type = $expression['type'];
 
             // Nested "( Expression )"
@@ -353,6 +354,7 @@ class MeilisearchEngine extends Engine
 
         }
 
+        logger('MeilisearchEngine filter ' . json_encode($stack));
         return implode(' ', $stack);
 
     }
