@@ -354,7 +354,7 @@ class MeilisearchEngine extends Engine
 
         }
 
-        logger('MeilisearchEngine filter ' . json_encode($stack));
+        // logger('MeilisearchEngine filter ' . json_encode($stack));
         return implode(' ', $stack);
 
     }
