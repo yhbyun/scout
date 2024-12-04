@@ -4,9 +4,14 @@ namespace Laravel\Scout;
 
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\ScopeInterface as Scope;
+use Illuminate\Database\Eloquent\ScopeInterface as ScopeOld;
+use Illuminate\Database\Eloquent\Scope as Scope;
 use Laravel\Scout\Events\ModelsFlushed;
 use Laravel\Scout\Events\ModelsImported;
+
+if (! interface_exists(Scope::class)) {
+    class_alias(ScopeOld::class, Scope::class);
+}
 
 class SearchableScope implements Scope
 {
